@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  Columns2,
   LogOut,
   PanelLeft,
+  Rows2,
   Search,
   Settings,
   Zap,
@@ -25,6 +27,8 @@ export function Header() {
   const { username, logout } = useAuthStore();
   const toggleExplorer = useUiStore((s) => s.toggleExplorer);
   const togglePalette = useUiStore((s) => s.togglePalette);
+  const layoutDir = useUiStore((s) => s.layoutDir);
+  const toggleLayoutDir = useUiStore((s) => s.toggleLayoutDir);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isMac =
@@ -33,15 +37,35 @@ export function Header() {
   const modKey = isMac ? "⌘" : "Ctrl";
 
   return (
-    <header className="h-9 flex items-center justify-between gap-3 px-2 border-b border-border bg-card/50 shrink-0">
+    <header className="h-9 flex items-center justify-between gap-3 px-2 border-b border-border bg-surface-1 shrink-0">
       <div className="flex items-center gap-1">
         <button
           onClick={toggleExplorer}
-          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"
           aria-label="Toggle file explorer"
           title={`Toggle Explorer (${modKey}+B)`}
         >
           <PanelLeft className="size-3.5" />
+        </button>
+        <button
+          onClick={toggleLayoutDir}
+          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"
+          aria-label={
+            layoutDir === "horizontal"
+              ? "Stack compiler panel below editor"
+              : "Show compiler panel beside editor"
+          }
+          title={
+            layoutDir === "horizontal"
+              ? "Stack vertically"
+              : "Side-by-side layout"
+          }
+        >
+          {layoutDir === "horizontal" ? (
+            <Rows2 className="size-3.5" />
+          ) : (
+            <Columns2 className="size-3.5" />
+          )}
         </button>
         <span className="size-5 rounded flex items-center justify-center bg-gradient-to-br from-primary to-primary-glow ml-1">
           <Zap className="size-3 text-primary-foreground" />
