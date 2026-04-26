@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, Menu, Settings, Zap } from "lucide-react";
+import {
+  ChevronDown,
+  LogOut,
+  PanelLeft,
+  Search,
+  Settings,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,48 +24,54 @@ export function Header() {
   const navigate = useNavigate();
   const { username, logout } = useAuthStore();
   const toggleExplorer = useUiStore((s) => s.toggleExplorer);
+  const togglePalette = useUiStore((s) => s.togglePalette);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const isMac =
+    typeof navigator !== "undefined" &&
+    /mac|iphone|ipad/i.test(navigator.platform);
+  const modKey = isMac ? "⌘" : "Ctrl";
+
   return (
-    <header className="panel mx-3 mt-3 px-4 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
+    <header className="h-9 flex items-center justify-between gap-3 px-2 border-b border-border bg-card/50 shrink-0">
+      <div className="flex items-center gap-1">
+        <button
           onClick={toggleExplorer}
+          className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/50"
           aria-label="Toggle file explorer"
-          className="text-muted-foreground hover:text-foreground"
+          title={`Toggle Explorer (${modKey}+B)`}
         >
-          <Menu className="size-5" />
-        </Button>
-        <span className="size-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-primary-glow shadow-[var(--shadow-elegant)]">
-          <Zap className="size-4 text-primary-foreground" />
+          <PanelLeft className="size-3.5" />
+        </button>
+        <span className="size-5 rounded flex items-center justify-center bg-gradient-to-br from-primary to-primary-glow ml-1">
+          <Zap className="size-3 text-primary-foreground" />
         </span>
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold tracking-tight">CompilerHub</h1>
-          <Badge
-            variant="outline"
-            className="border-border bg-secondary/60 text-xs text-muted-foreground"
-          >
-            Enterprise
-          </Badge>
-        </div>
+        <h1 className="text-xs font-semibold tracking-tight ml-1">
+          CompilerHub
+        </h1>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="hidden sm:inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="size-2 rounded-full bg-success animate-pulse" />
-          System Ready
-        </span>
+      <button
+        onClick={togglePalette}
+        className="hidden sm:flex items-center gap-2 h-6 px-2 max-w-md w-72 rounded-md bg-background/60 border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+      >
+        <Search className="size-3" />
+        <span className="flex-1 text-left">Search files, run commands…</span>
+        <kbd className="font-mono text-[10px] px-1 rounded bg-secondary/60 border border-border">
+          {modKey}K
+        </kbd>
+      </button>
 
+      <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="secondary"
-              className="bg-primary/15 hover:bg-primary/25 text-foreground border border-primary/30"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
             >
               {username ?? "Account"}
-              <ChevronDown className="size-4 ml-1" />
+              <ChevronDown className="size-3 ml-0.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="panel border-border">
