@@ -116,7 +116,28 @@ export function CodeEditor() {
         saveActive().catch(() => toast.error("Failed to save"));
       }
     });
+    editor.onDidChangeCursorPosition((e) => {
+      window.dispatchEvent(
+        new CustomEvent("compilerhub:cursor", {
+          detail: { line: e.position.lineNumber, col: e.position.column },
+        }),
+      );
+    });
   };
+
+  // Listen for goto-line events from compilation panel
+  useEffect(() => {
+    const onGoto = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { line: number };
+      const ed = editorRef.current;
+      if (!ed || !detail?.line) return;
+      ed.revealLineInCenter(detail.line);
+      ed.setPosition({ lineNumber: detail.line, column: 1 });
+      ed.focus();
+    };
+    window.addEventListener("compilerhub:goto-line", onGoto);
+    return () => window.removeEventListener("compilerhub:goto-line", onGoto);
+  }, []);
 
   // Tab list — always include scratch entry if no real tabs
   const tabs =
