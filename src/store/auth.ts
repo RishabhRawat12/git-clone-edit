@@ -18,38 +18,33 @@ interface AuthState {
 const USERNAME_KEY = "compilerhub:username";
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
-  username: null,
-  isAuthenticated: false,
+  // 1. Hardcode initial state to true
+  token: "dummy-token",
+  username: "demo-user",
+  isAuthenticated: true,
 
+  // 2. Force authentication on page reload
   hydrate: () => {
-    const token = tokenStorage.get();
-    const username = localStorage.getItem(USERNAME_KEY);
-    set({ token, username, isAuthenticated: !!token });
+    set({ token: "dummy-token", username: "demo-user", isAuthenticated: true });
   },
 
+  // 3. Remove API calls and mock a successful login
   login: async (email, password) => {
-    const { data } = await api.post("/api/auth/login", { email, password });
-    const token = data.token ?? data.access_token;
-    const username = data.username ?? email.split("@")[0];
-    if (!token) throw new Error("No token returned from server");
+    const token = "dummy-token";
+    const username = email.split("@")[0];
+    
     tokenStorage.set(token);
     localStorage.setItem(USERNAME_KEY, username);
     set({ token, username, isAuthenticated: true });
   },
 
+  // 4. Remove API calls and mock a successful signup
   signup: async (username, email, password) => {
-    const { data } = await api.post("/api/auth/signup", {
-      username,
-      email,
-      password,
-    });
-    const token = data.token ?? data.access_token;
-    const finalUsername = data.username ?? username;
-    if (!token) throw new Error("No token returned from server");
+    const token = "dummy-token";
+    
     tokenStorage.set(token);
-    localStorage.setItem(USERNAME_KEY, finalUsername);
-    set({ token, username: finalUsername, isAuthenticated: true });
+    localStorage.setItem(USERNAME_KEY, username);
+    set({ token, username, isAuthenticated: true });
   },
 
   logout: () => {
