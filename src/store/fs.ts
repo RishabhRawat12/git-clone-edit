@@ -189,8 +189,13 @@ export const useFsStore = create<FsState>((set, get) => ({
 
   remove: async (type, id) => {
     await api.delete(`/api/fs/${type}/${id}`);
-    if (type === "file" && get().activeFileId === id) {
-      set({ activeFileId: null, activeContent: "", dirty: false });
+    if (type === "file") {
+      set((s) => ({
+        openTabs: s.openTabs.filter((t) => t !== id),
+        ...(s.activeFileId === id
+          ? { activeFileId: null, activeContent: "", dirty: false }
+          : {}),
+      }));
     }
     await get().refresh();
   },
