@@ -31,8 +31,15 @@ interface FsState {
   lastSavedAt: number | null;
   loading: boolean;
   openTabs: string[];
+  /** File currently shown in italic preview tab — replaced on next peek. */
+  previewTabId: string | null;
 
   refresh: () => Promise<void>;
+  /** Single-click peek: open as preview (replaces previous preview tab). */
+  peekFile: (id: string) => void;
+  /** Double-click pin: open as a permanent tab. */
+  pinFile: (id: string) => void;
+  /** Legacy alias — peeks (kept for backwards compat with existing callers). */
   selectFile: (id: string) => void;
   closeTab: (id: string) => void;
   setContent: (content: string) => void;
@@ -105,6 +112,7 @@ export const useFsStore = create<FsState>((set, get) => ({
   lastSavedAt: null,
   loading: false,
   openTabs: [],
+  previewTabId: null,
 
   refresh: async () => {
     set({ loading: true });
@@ -118,15 +126,49 @@ export const useFsStore = create<FsState>((set, get) => ({
     }
   },
 
-  selectFile: (id) => {
+  peekFile: (id) => {
+    const file = get().files.find((f) => f.id === id);
+    if (!file) return;
+    set((s) => {
+      // Already pinned? just activate.
+      if (s.openTabs.includes(id) && s.previewTabId !== id) {
+        return {
+          activeFileId: id,
+          activeContent: file.content ?? "",
+          dirty: false,
+        };
+      }
+      // Replace previous preview tab (if any) with this one
+      let nextTabs = s.openTabs.slice();
+      if (s.previewTabId && s.previewTabId !== id) {
+        nextTabs = nextTabs.filter((t) => t !== s.previewTabId);
+      }
+      if (!nextTabs.includes(id)) nextTabs.push(id);
+      return {
+        openTabs: nextTabs,
+        previewTabId: id,
+        activeFileId: id,
+        activeContent: file.content ?? "",
+        dirty: false,
+      };
+    });
+  },
+
+  pinFile: (id) => {
     const file = get().files.find((f) => f.id === id);
     if (!file) return;
     set((s) => ({
+      openTabs: s.openTabs.includes(id) ? s.openTabs : [...s.openTabs, id],
+      previewTabId: s.previewTabId === id ? null : s.previewTabId,
       activeFileId: id,
       activeContent: file.content ?? "",
       dirty: false,
-      openTabs: s.openTabs.includes(id) ? s.openTabs : [...s.openTabs, id],
     }));
+  },
+
+  selectFile: (id) => {
+    // Backwards compat: behaves like peek.
+    get().peekFile(id);
   },
 
   closeTab: (id) => {
@@ -144,14 +186,22 @@ export const useFsStore = create<FsState>((set, get) => ({
     }
     set({
       openTabs: next,
+      previewTabId: s.previewTabId === id ? null : s.previewTabId,
       activeFileId: nextActive,
       activeContent: nextContent,
-      dirty: false,
+      dirty: nextActive === s.activeFileId ? s.dirty : false,
     });
   },
 
   setContent: (content) => {
-    set({ activeContent: content, dirty: true });
+    set((s) => {
+      // Editing a preview tab promotes it to a pinned tab.
+      const promoted =
+        s.previewTabId && s.previewTabId === s.activeFileId
+          ? { previewTabId: null }
+          : {};
+      return { activeContent: content, dirty: true, ...promoted };
+    });
   },
 
   saveActive: async () => {
@@ -192,6 +242,7 @@ export const useFsStore = create<FsState>((set, get) => ({
     if (type === "file") {
       set((s) => ({
         openTabs: s.openTabs.filter((t) => t !== id),
+        previewTabId: s.previewTabId === id ? null : s.previewTabId,
         ...(s.activeFileId === id
           ? { activeFileId: null, activeContent: "", dirty: false }
           : {}),

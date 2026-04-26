@@ -2,12 +2,16 @@ import { create } from "zustand";
 
 const FONT_KEY = "compilerhub:fontSize";
 const EXPLORER_KEY = "compilerhub:explorerCollapsed";
+const LAYOUT_KEY = "compilerhub:layoutDir"; // "h" | "v"
+
+export type LayoutDir = "horizontal" | "vertical";
 
 interface UiState {
   explorerOpen: boolean; // legacy, still toggles collapsed inverse
   explorerCollapsed: boolean;
   paletteOpen: boolean;
   fontSize: number;
+  layoutDir: LayoutDir;
   setExplorerOpen: (open: boolean) => void;
   toggleExplorer: () => void;
   setPaletteOpen: (open: boolean) => void;
@@ -15,13 +19,21 @@ interface UiState {
   fontInc: () => void;
   fontDec: () => void;
   setFontSize: (n: number) => void;
+  toggleLayoutDir: () => void;
+  setLayoutDir: (d: LayoutDir) => void;
 }
+
+const readLayout = (): LayoutDir => {
+  const v = localStorage.getItem(LAYOUT_KEY);
+  return v === "v" ? "vertical" : "horizontal";
+};
 
 export const useUiStore = create<UiState>((set) => ({
   explorerOpen: false,
   explorerCollapsed: localStorage.getItem(EXPLORER_KEY) === "1",
   paletteOpen: false,
   fontSize: Number(localStorage.getItem(FONT_KEY)) || 14,
+  layoutDir: readLayout(),
 
   setExplorerOpen: (explorerOpen) => set({ explorerOpen }),
   toggleExplorer: () =>
@@ -47,5 +59,16 @@ export const useUiStore = create<UiState>((set) => ({
   setFontSize: (n) => {
     localStorage.setItem(FONT_KEY, String(n));
     set({ fontSize: n });
+  },
+  toggleLayoutDir: () =>
+    set((s) => {
+      const next: LayoutDir =
+        s.layoutDir === "horizontal" ? "vertical" : "horizontal";
+      localStorage.setItem(LAYOUT_KEY, next === "vertical" ? "v" : "h");
+      return { layoutDir: next };
+    }),
+  setLayoutDir: (d) => {
+    localStorage.setItem(LAYOUT_KEY, d === "vertical" ? "v" : "h");
+    set({ layoutDir: d });
   },
 }));

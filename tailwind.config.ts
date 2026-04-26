@@ -17,12 +17,41 @@ export default {
       },
     },
     extend: {
+      fontSize: {
+        // Strict typographical scale — no more arbitrary text-[10px]
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }], // 10px
+        "xs-tight": ["0.6875rem", { lineHeight: "1rem" }], // 11px
+      },
       colors: {
-        border: "hsl(var(--border))",
+        border: {
+          DEFAULT: "hsl(var(--border))",
+          strong: "hsl(var(--border-strong))",
+        },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        "subtle-foreground": "hsl(var(--subtle-foreground))",
+        // Solid elevation surfaces — use these instead of bg-*/40
+        surface: {
+          0: "hsl(var(--surface-0))",
+          1: "hsl(var(--surface-1))",
+          2: "hsl(var(--surface-2))",
+          3: "hsl(var(--surface-3))",
+        },
+        terminal: "hsl(var(--terminal-bg))",
+        syntax: {
+          keyword: "hsl(var(--syntax-keyword))",
+          fn: "hsl(var(--syntax-fn))",
+          string: "hsl(var(--syntax-string))",
+          type: "hsl(var(--syntax-type))",
+          number: "hsl(var(--syntax-number))",
+          error: "hsl(var(--syntax-error))",
+          warning: "hsl(var(--syntax-warning))",
+          comment: "hsl(var(--syntax-comment))",
+          base: "hsl(var(--syntax-base))",
+          punct: "hsl(var(--syntax-punct))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
