@@ -1,21 +1,5 @@
-import { useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  ChevronRight,
-  CircleAlert,
-  FileWarning,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import {
   CompilerCategory,
   CompilePhase,
@@ -26,15 +10,15 @@ import { cn } from "@/lib/utils";
 
 const CATEGORIES: { id: CompilerCategory; label: string }[] = [
   { id: "output", label: "Output" },
-  { id: "warning", label: "Warning" },
-  { id: "error", label: "Error" },
+  { id: "warning", label: "Warnings" },
+  { id: "error", label: "Errors" },
 ];
 
 const PHASE_LABELS: Record<CompilePhase, string> = {
   lexical: "Lexical",
   syntax: "Syntax",
   semantic: "Semantic",
-  intermediate: "Intermediate Code",
+  intermediate: "IR",
 };
 
 export function CompilationPanel() {
@@ -55,13 +39,9 @@ export function CompilationPanel() {
   const warnCount = totalWarnings();
 
   return (
-    <section className="panel flex flex-col h-full overflow-hidden">
-      {/* Category tabs */}
-      <div
-        role="tablist"
-        aria-label="Compilation category"
-        className="flex items-center gap-1 px-3 pt-3"
-      >
+    <section className="flex flex-col h-full overflow-hidden bg-card/60 border border-border rounded-lg">
+      {/* Top bar: category tabs */}
+      <div className="flex items-center h-9 border-b border-border bg-background/40 px-2 gap-0.5">
         {CATEGORIES.map((c) => {
           const active = category === c.id;
           const count =
@@ -73,43 +53,37 @@ export function CompilationPanel() {
               aria-selected={active}
               onClick={() => setCategory(c.id)}
               className={cn(
-                "relative px-4 py-2 text-sm font-medium rounded-t-lg transition-colors",
+                "relative h-9 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors",
                 active
-                  ? "text-primary"
+                  ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5">
                 {c.label}
                 {count !== null && count > 0 && (
-                  <Badge
-                    variant="secondary"
+                  <span
                     className={cn(
-                      "h-5 px-1.5 text-[10px]",
+                      "px-1 min-w-4 text-center rounded text-[10px] font-mono",
                       c.id === "error"
-                        ? "bg-destructive/20 text-destructive border border-destructive/40"
-                        : "bg-warning/20 text-warning border border-warning/40",
+                        ? "bg-destructive/20 text-destructive"
+                        : "bg-warning/20 text-warning",
                     )}
                   >
                     {count}
-                  </Badge>
+                  </span>
                 )}
               </span>
               {active && (
-                <span className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full bg-primary" />
+                <span className="absolute left-1 right-1 bottom-0 h-[2px] bg-primary rounded-full" />
               )}
             </button>
           );
         })}
       </div>
-      <div className="border-b border-border" />
 
       {/* Phase sub-tabs */}
-      <div
-        role="tablist"
-        aria-label="Compilation phase"
-        className="flex flex-wrap items-center gap-2 px-3 py-3"
-      >
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border bg-background/20">
         {PHASES.map((p) => {
           const active = phase === p;
           return (
@@ -119,10 +93,10 @@ export function CompilationPanel() {
               aria-selected={active}
               onClick={() => setPhase(p)}
               className={cn(
-                "px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors",
+                "px-2.5 py-1 text-[11px] font-mono rounded transition-colors",
                 active
-                  ? "bg-accent text-accent-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60",
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
               )}
             >
               {PHASE_LABELS[p]}
@@ -131,19 +105,12 @@ export function CompilationPanel() {
         })}
       </div>
 
-      {/* Body */}
-      <div className="flex-1 min-h-0 overflow-auto px-4 pb-4">
+      {/* Body — terminal */}
+      <div className="flex-1 min-h-0 overflow-auto bg-[#0a0d18] font-mono text-[12px] leading-[1.6] text-[#c0caf5]">
         {isCompiling ? (
-          <CenterState>
-            <Loader2 className="size-6 animate-spin text-primary mb-3" />
-            <p className="text-sm text-muted-foreground">Running compiler…</p>
-          </CenterState>
+          <CompilingShimmer />
         ) : !response ? (
-          <CenterState>
-            <p className="text-sm italic text-muted-foreground">
-              Compile your code to see {category} for {PHASE_LABELS[phase]}.
-            </p>
-          </CenterState>
+          <EmptyTerminal category={category} phase={phase} />
         ) : category === "output" ? (
           <OutputView phase={phase} />
         ) : category === "error" ? (
@@ -164,10 +131,59 @@ export function CompilationPanel() {
   );
 }
 
-function CenterState({ children }: { children: React.ReactNode }) {
+/* ---------------- States ---------------- */
+
+function Prompt({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-full min-h-[160px] flex flex-col items-center justify-center text-center px-6">
-      {children}
+    <div className="flex gap-2">
+      <span className="text-emerald-400 select-none">❯</span>
+      <span className="flex-1">{children}</span>
+    </div>
+  );
+}
+
+function EmptyTerminal({
+  category,
+  phase,
+}: {
+  category: CompilerCategory;
+  phase: CompilePhase;
+}) {
+  return (
+    <div className="px-4 py-4 space-y-1">
+      <Prompt>
+        <span className="text-muted-foreground">
+          waiting for compile — showing {category} / {PHASE_LABELS[phase]}
+        </span>
+      </Prompt>
+      <Prompt>
+        <span className="inline-block w-2 h-4 align-middle bg-[#bb9af7] animate-pulse" />
+      </Prompt>
+    </div>
+  );
+}
+
+function CompilingShimmer() {
+  return (
+    <div className="px-4 py-4 space-y-1.5">
+      <Prompt>
+        <span className="text-emerald-300">compile</span>
+        <span className="text-muted-foreground"> --target=c99 --verbose</span>
+      </Prompt>
+      <div className="pl-4 space-y-1.5">
+        {[60, 80, 45, 90, 70, 35].map((w, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="text-muted-foreground/60">{String(i + 1).padStart(2, " ")}│</span>
+            <span
+              className="h-3 rounded-sm bg-gradient-to-r from-primary/30 via-primary/10 to-transparent animate-pulse"
+              style={{ width: `${w}%` }}
+            />
+          </div>
+        ))}
+      </div>
+      <Prompt>
+        <span className="inline-block w-2 h-4 align-middle bg-[#bb9af7] animate-[pulse_0.9s_ease-in-out_infinite]" />
+      </Prompt>
     </div>
   );
 }
@@ -184,42 +200,29 @@ function OutputView({ phase }: { phase: CompilePhase }) {
       lexeme: string;
       line: number;
     }>) ?? [];
-    if (!tokens.length)
-      return (
-        <CenterState>
-          <p className="text-sm italic text-muted-foreground">
-            No lexical tokens produced.
-          </p>
-        </CenterState>
-      );
+    if (!tokens.length) return <Empty text="no lexical tokens produced" />;
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Token Type</TableHead>
-            <TableHead>Lexeme</TableHead>
-            <TableHead className="w-20 text-right">Line</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tokens.map((t, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-mono text-xs text-primary">
-                {t.type}
-              </TableCell>
-              <TableCell className="font-mono text-xs">{t.lexeme}</TableCell>
-              <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                {t.line}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="px-4 py-3">
+        <div className="text-[#7aa2f7] mb-2">// {tokens.length} tokens</div>
+        {tokens.map((t, i) => (
+          <div key={i} className="flex gap-3 hover:bg-white/[0.02] px-1">
+            <span className="text-muted-foreground/50 select-none w-10 text-right">
+              {t.line}
+            </span>
+            <span className="text-[#bb9af7] w-28 truncate">{t.type}</span>
+            <span className="text-[#9ece6a]">{t.lexeme}</span>
+          </div>
+        ))}
+      </div>
     );
   }
 
   if (phase === "syntax") {
-    return <JsonTree value={data.output} />;
+    return (
+      <div className="px-4 py-3">
+        <JsonTree value={data.output} />
+      </div>
+    );
   }
 
   if (phase === "semantic") {
@@ -229,58 +232,59 @@ function OutputView({ phase }: { phase: CompilePhase }) {
       scope?: string;
       line?: number;
     }>) ?? [];
-    if (!rows.length)
-      return (
-        <CenterState>
-          <p className="text-sm italic text-muted-foreground">
-            Symbol table is empty.
-          </p>
-        </CenterState>
-      );
+    if (!rows.length) return <Empty text="symbol table is empty" />;
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Scope</TableHead>
-            <TableHead className="w-20 text-right">Line</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((r, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-mono text-xs">{r.name}</TableCell>
-              <TableCell className="font-mono text-xs text-primary">
-                {r.type}
-              </TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground">
-                {r.scope ?? "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                {r.line ?? "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="px-4 py-3">
+        <div className="text-[#7aa2f7] mb-2">// symbol table — {rows.length} entries</div>
+        <div className="grid grid-cols-[3rem_1fr_1fr_1fr] gap-x-3 text-[11px] text-muted-foreground/60 mb-1 px-1">
+          <span className="text-right">line</span>
+          <span>name</span>
+          <span>type</span>
+          <span>scope</span>
+        </div>
+        {rows.map((r, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-[3rem_1fr_1fr_1fr] gap-x-3 hover:bg-white/[0.02] px-1"
+          >
+            <span className="text-muted-foreground/50 text-right">
+              {r.line ?? "—"}
+            </span>
+            <span className="text-foreground">{r.name}</span>
+            <span className="text-[#2ac3de]">{r.type}</span>
+            <span className="text-muted-foreground">{r.scope ?? "—"}</span>
+          </div>
+        ))}
+      </div>
     );
   }
 
   // intermediate
   const tac = String(data.output ?? "");
-  if (!tac.trim())
-    return (
-      <CenterState>
-        <p className="text-sm italic text-muted-foreground">
-          No intermediate code produced.
-        </p>
-      </CenterState>
-    );
+  if (!tac.trim()) return <Empty text="no intermediate code produced" />;
+  const lines = tac.split("\n");
   return (
-    <pre className="font-mono text-xs leading-6 bg-secondary/40 rounded-lg p-4 overflow-auto whitespace-pre">
-      {tac}
-    </pre>
+    <div className="px-4 py-3">
+      <div className="text-[#7aa2f7] mb-2">// three-address code</div>
+      {lines.map((line, i) => (
+        <div key={i} className="flex gap-3 hover:bg-white/[0.02] px-1">
+          <span className="text-muted-foreground/50 select-none w-10 text-right">
+            {i + 1}
+          </span>
+          <span className="whitespace-pre">{line}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="px-4 py-4">
+      <Prompt>
+        <span className="text-muted-foreground italic">{text}</span>
+      </Prompt>
+    </div>
   );
 }
 
@@ -288,19 +292,8 @@ function JsonTree({ value }: { value: unknown }) {
   const empty =
     value == null ||
     (typeof value === "object" && Object.keys(value as object).length === 0);
-  if (empty)
-    return (
-      <CenterState>
-        <p className="text-sm italic text-muted-foreground">
-          No syntax tree produced.
-        </p>
-      </CenterState>
-    );
-  return (
-    <div className="font-mono text-xs leading-6 bg-secondary/40 rounded-lg p-3 overflow-auto">
-      <Node value={value} name="root" depth={0} />
-    </div>
-  );
+  if (empty) return <Empty text="no syntax tree produced" />;
+  return <Node value={value} name="root" depth={0} />;
 }
 
 function Node({
@@ -317,27 +310,25 @@ function Node({
 
   if (!isObj) {
     return (
-      <div style={{ paddingLeft: depth * 12 }}>
-        <span className="text-muted-foreground">{name}:</span>{" "}
-        <span className="text-primary">{JSON.stringify(value)}</span>
+      <div style={{ paddingLeft: depth * 14 }}>
+        <span className="text-[#7aa2f7]">{name}</span>
+        <span className="text-muted-foreground">: </span>
+        <span className="text-[#9ece6a]">{JSON.stringify(value)}</span>
       </div>
     );
   }
 
   const entries = Object.entries(value as Record<string, unknown>);
   return (
-    <div style={{ paddingLeft: depth * 12 }}>
+    <div style={{ paddingLeft: depth * 14 }}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 text-foreground hover:text-primary"
       >
         <ChevronRight
-          className={cn(
-            "size-3 transition-transform",
-            open && "rotate-90",
-          )}
+          className={cn("size-3 transition-transform", open && "rotate-90")}
         />
-        <span>{name}</span>
+        <span className="text-[#bb9af7]">{name}</span>
         <span className="text-muted-foreground/70">
           {Array.isArray(value) ? `[${entries.length}]` : `{${entries.length}}`}
         </span>
@@ -350,7 +341,7 @@ function Node({
   );
 }
 
-/* ---------------- Diagnostics list ---------------- */
+/* ---------------- Diagnostics ---------------- */
 
 function DiagnosticList({
   items,
@@ -363,52 +354,44 @@ function DiagnosticList({
 }) {
   if (!items.length) {
     return (
-      <CenterState>
-        <p className="text-sm italic text-muted-foreground">
-          No {severity}s in {PHASE_LABELS[phase]} phase.
-        </p>
-      </CenterState>
+      <Empty
+        text={`no ${severity}s in ${PHASE_LABELS[phase].toLowerCase()} phase`}
+      />
     );
   }
 
+  const tag = severity === "error" ? "error" : "warning";
+  const tint =
+    severity === "error"
+      ? "bg-destructive/[0.06] hover:bg-destructive/[0.10] text-[#f7768e]"
+      : "bg-warning/[0.06] hover:bg-warning/[0.10] text-[#e0af68]";
+
   return (
-    <ul className="space-y-2">
+    <div className="py-1">
       {items.map((d, i) => (
-        <li
+        <button
           key={i}
-          className="flex items-start gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2.5"
-        >
-          {severity === "error" ? (
-            <CircleAlert className="size-4 mt-0.5 text-destructive shrink-0" />
-          ) : (
-            <AlertTriangle className="size-4 mt-0.5 text-warning shrink-0" />
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent("compilerhub:goto-line", {
+                detail: { line: d.line },
+              }),
+            )
+          }
+          className={cn(
+            "w-full text-left flex gap-3 px-4 py-1 transition-colors",
+            tint,
           )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge
-                variant="outline"
-                className="h-5 text-[10px] uppercase tracking-wide border-primary/30 text-primary bg-primary/10"
-              >
-                {PHASE_LABELS[phase]}
-              </Badge>
-              <button
-                onClick={() => {
-                  // Future: jump editor cursor to line
-                  window.dispatchEvent(
-                    new CustomEvent("compilerhub:goto-line", {
-                      detail: { line: d.line },
-                    }),
-                  );
-                }}
-                className="text-xs font-mono text-muted-foreground hover:text-primary"
-              >
-                line {d.line}
-              </button>
-            </div>
-            <p className="text-sm leading-snug font-mono">{d.message}</p>
-          </div>
-        </li>
+        >
+          <span className="text-muted-foreground/50 select-none w-12 text-right shrink-0">
+            {d.line}:
+          </span>
+          <span className="opacity-70 uppercase text-[10px] tracking-wider mt-[2px] shrink-0">
+            {tag}
+          </span>
+          <span className="flex-1 break-words">{d.message}</span>
+        </button>
       ))}
-    </ul>
+    </div>
   );
 }
