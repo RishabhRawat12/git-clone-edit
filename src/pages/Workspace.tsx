@@ -20,6 +20,7 @@ import { useUiStore } from "@/store/ui";
 const Workspace = () => {
   const { isAuthenticated, hydrate } = useAuthStore();
   const explorerCollapsed = useUiStore((s) => s.explorerCollapsed);
+  const layoutDir = useUiStore((s) => s.layoutDir);
   const explorerPanelRef = useRef<ImperativePanelHandle | null>(null);
 
   useEffect(() => {
@@ -42,15 +43,44 @@ const Workspace = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  // The editor + compiler pair stacks horizontally or vertically based on prefs.
+  const editorCompilerPair = (
+    <ResizablePanelGroup
+      direction={layoutDir}
+      className="h-full"
+      autoSaveId={`compilerhub:layout-pair-${layoutDir}`}
+    >
+      <ResizablePanel defaultSize={62} minSize={30}>
+        <div className="h-full">
+          <CodeEditor />
+        </div>
+      </ResizablePanel>
+      <ResizableHandle
+        className={
+          layoutDir === "horizontal"
+            ? "bg-transparent w-1.5 hover:bg-primary/30 transition-colors"
+            : "bg-transparent h-1.5 hover:bg-primary/30 transition-colors"
+        }
+      />
+      <ResizablePanel defaultSize={38} minSize={20} collapsible>
+        <div
+          className={layoutDir === "horizontal" ? "h-full pl-1" : "h-full pt-1"}
+        >
+          <CompilationPanel />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-surface-0 overflow-hidden">
       <Header />
 
       <main className="flex-1 min-h-0 p-1.5">
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full"
-          autoSaveId="compilerhub:layout-h"
+          autoSaveId="compilerhub:layout-shell"
         >
           <ResizablePanel
             ref={explorerPanelRef}
@@ -69,17 +99,8 @@ const Workspace = () => {
           </ResizablePanel>
           <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
 
-          <ResizablePanel defaultSize={52} minSize={30}>
-            <div className="h-full">
-              <CodeEditor />
-            </div>
-          </ResizablePanel>
-
-          <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
-          <ResizablePanel defaultSize={30} minSize={20} collapsible>
-            <div className="h-full pl-1">
-              <CompilationPanel />
-            </div>
+          <ResizablePanel defaultSize={82} minSize={40}>
+            <div className="h-full">{editorCompilerPair}</div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>
