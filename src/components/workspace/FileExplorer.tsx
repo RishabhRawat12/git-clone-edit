@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   ChevronRight,
-  File as FileIcon,
   Folder,
+  FolderOpen,
   FolderPlus,
   FilePlus,
-  MoreHorizontal,
   Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
@@ -36,13 +30,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useFsStore, TreeNode } from "@/store/fs";
-import { useUiStore } from "@/store/ui";
 import { cn } from "@/lib/utils";
+import { getFileIcon } from "@/lib/fileIcons";
 
-export function FileExplorerSheet() {
-  const { explorerOpen, setExplorerOpen } = useUiStore();
+export function FileExplorer() {
   const { tree, refresh, loading, createFile, createFolder } = useFsStore();
-
   const [pending, setPending] = useState<{
     type: "file" | "folder";
     parentId: string | null;
@@ -50,20 +42,8 @@ export function FileExplorerSheet() {
   const [newName, setNewName] = useState("");
 
   useEffect(() => {
-    if (explorerOpen) refresh().catch(() => toast.error("Failed to load files"));
-  }, [explorerOpen, refresh]);
-
-  // Cmd/Ctrl + B
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        useUiStore.getState().toggleExplorer();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+    refresh().catch(() => toast.error("Failed to load files"));
+  }, [refresh]);
 
   const handleCreate = async () => {
     if (!pending || !newName.trim()) return;
@@ -81,82 +61,72 @@ export function FileExplorerSheet() {
   };
 
   return (
-    <>
-      <Sheet open={explorerOpen} onOpenChange={setExplorerOpen}>
-        <SheetContent
-          side="left"
-          className="w-[320px] sm:w-[360px] panel border-border p-0"
-        >
-          <SheetHeader className="px-4 py-4 border-b border-border">
-            <div className="flex items-center justify-between gap-3">
-              <SheetTitle>Files</SheetTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => {
-                    setPending({ type: "file", parentId: null });
-                    setNewName("");
-                  }}
-                  aria-label="New file"
-                >
-                  <FilePlus className="size-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => {
-                    setPending({ type: "folder", parentId: null });
-                    setNewName("");
-                  }}
-                  aria-label="New folder"
-                >
-                  <FolderPlus className="size-4" />
-                </Button>
-              </div>
-            </div>
-            <SheetDescription className="text-xs">
-              Click a file to open it in the editor.
-            </SheetDescription>
-          </SheetHeader>
+    <aside className="h-full flex flex-col bg-card/60 border border-border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-3 h-9 border-b border-border bg-background/40">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Explorer
+        </span>
+        <div className="flex items-center gap-0.5">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setPending({ type: "file", parentId: null });
+              setNewName("");
+            }}
+            aria-label="New file"
+          >
+            <FilePlus className="size-3.5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setPending({ type: "folder", parentId: null });
+              setNewName("");
+            }}
+            aria-label="New folder"
+          >
+            <FolderPlus className="size-3.5" />
+          </Button>
+        </div>
+      </div>
 
-          <div className="px-2 py-2 overflow-auto h-[calc(100vh-100px)]">
-            {loading && !tree.length ? (
-              <div className="flex items-center gap-2 px-3 py-6 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Loading…
-              </div>
-            ) : !tree.length ? (
-              <div className="px-3 py-12 text-center">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Create your first file
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setPending({ type: "file", parentId: null });
-                    setNewName("main.c");
-                  }}
-                  className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground"
-                >
-                  <FilePlus className="size-4 mr-1.5" /> New file
-                </Button>
-              </div>
-            ) : (
-              <TreeView
-                nodes={tree}
-                onAddChild={(node) =>
-                  setPending({ type: "file", parentId: node.id })
-                }
-                onAddFolderChild={(node) =>
-                  setPending({ type: "folder", parentId: node.id })
-                }
-              />
-            )}
+      <div className="flex-1 min-h-0 overflow-auto py-1">
+        {loading && !tree.length ? (
+          <div className="flex items-center gap-2 px-3 py-6 text-xs text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin" /> Loading…
           </div>
-        </SheetContent>
-      </Sheet>
+        ) : !tree.length ? (
+          <div className="px-3 py-8 text-center">
+            <p className="text-xs text-muted-foreground mb-3">
+              No files yet
+            </p>
+            <Button
+              size="sm"
+              onClick={() => {
+                setPending({ type: "file", parentId: null });
+                setNewName("main.c");
+              }}
+              className="h-7 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30"
+            >
+              <FilePlus className="size-3.5 mr-1.5" /> New file
+            </Button>
+          </div>
+        ) : (
+          <TreeView
+            nodes={tree}
+            onAddChild={(node) =>
+              setPending({ type: "file", parentId: node.id })
+            }
+            onAddFolderChild={(node) =>
+              setPending({ type: "folder", parentId: node.id })
+            }
+          />
+        )}
+      </div>
 
       <AlertDialog
         open={!!pending}
@@ -184,14 +154,14 @@ export function FileExplorerSheet() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCreate}
-              className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground"
+              className="bg-primary text-primary-foreground"
             >
               Create
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </aside>
   );
 }
 
@@ -207,7 +177,7 @@ function TreeView({
   depth?: number;
 }) {
   return (
-    <ul className="text-sm">
+    <ul className={cn("text-sm", depth > 0 && "border-l border-border/60 ml-3")}>
       {nodes.map((n) => (
         <NodeRow
           key={n.id}
@@ -236,22 +206,14 @@ function NodeRow({
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(node.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const { selectFile, activeFileId, rename, remove, setExplorerOpen } =
-    {
-      ...useFsStore.getState(),
-      setExplorerOpen: useUiStore.getState().setExplorerOpen,
-    };
 
+  const activeFileId = useFsStore((s) => s.activeFileId);
   const isActive = node.type === "file" && activeFileId === node.id;
   const isFolder = node.type === "folder";
 
   const handleClick = () => {
     if (isFolder) setOpen((o) => !o);
-    else {
-      useFsStore.getState().selectFile(node.id);
-      // Close on mobile-ish viewport
-      if (window.innerWidth < 768) setExplorerOpen(false);
-    }
+    else useFsStore.getState().selectFile(node.id);
   };
 
   const submitRename = async () => {
@@ -268,33 +230,42 @@ function NodeRow({
     }
   };
 
+  const fileIcon = !isFolder ? getFileIcon(node.name) : null;
+
   return (
     <li>
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer hover:bg-secondary/60",
-              isActive && "bg-primary/15 text-primary",
+              "group relative flex items-center gap-1.5 pr-1.5 py-[3px] cursor-pointer hover:bg-secondary/50 transition-colors",
+              isActive &&
+                "bg-primary/15 text-foreground before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-primary",
             )}
-            style={{ paddingLeft: depth * 12 + 8 }}
+            style={{ paddingLeft: depth * 10 + 6 }}
             onClick={handleClick}
           >
             {isFolder ? (
               <ChevronRight
                 className={cn(
-                  "size-3.5 text-muted-foreground transition-transform",
+                  "size-3 text-muted-foreground transition-transform shrink-0",
                   open && "rotate-90",
                 )}
               />
             ) : (
-              <span className="size-3.5" />
+              <span className="size-3 shrink-0" />
             )}
             {isFolder ? (
-              <Folder className="size-4 text-primary/80" />
-            ) : (
-              <FileIcon className="size-4 text-muted-foreground" />
-            )}
+              open ? (
+                <FolderOpen className="size-3.5 text-amber-300/90 shrink-0" />
+              ) : (
+                <Folder className="size-3.5 text-amber-300/90 shrink-0" />
+              )
+            ) : fileIcon ? (
+              <fileIcon.Icon
+                className={cn("size-3.5 shrink-0", fileIcon.className)}
+              />
+            ) : null}
             {renaming ? (
               <Input
                 autoFocus
@@ -309,54 +280,78 @@ function NodeRow({
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="h-6 px-1 py-0 text-xs"
+                className="h-5 px-1 py-0 text-xs"
               />
             ) : (
-              <span className="truncate flex-1 font-mono text-xs">
+              <span className="truncate flex-1 font-mono text-[12px] leading-5">
                 {node.name}
               </span>
             )}
 
-            {isFolder && (
-              <span className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddChild(node);
-                  }}
-                  className="p-0.5 rounded hover:bg-secondary"
-                  aria-label="New file"
-                >
-                  <FilePlus className="size-3.5 text-muted-foreground" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddFolderChild(node);
-                  }}
-                  className="p-0.5 rounded hover:bg-secondary"
-                  aria-label="New folder"
-                >
-                  <FolderPlus className="size-3.5 text-muted-foreground" />
-                </button>
-              </span>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Trigger context menu via right-click is built-in;
-                // here we just open rename quickly.
-                setRenaming(true);
-              }}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-secondary"
-              aria-label="Actions"
-            >
-              <MoreHorizontal className="size-3.5 text-muted-foreground" />
-            </button>
+            <span className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5">
+              {isFolder && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddChild(node);
+                    }}
+                    className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
+                    aria-label="New file"
+                    title="New file"
+                  >
+                    <FilePlus className="size-3" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddFolderChild(node);
+                    }}
+                    className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
+                    aria-label="New folder"
+                    title="New folder"
+                  >
+                    <FolderPlus className="size-3" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRenaming(true);
+                }}
+                className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
+                aria-label="Rename"
+                title="Rename"
+              >
+                <Pencil className="size-3" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(true);
+                }}
+                className="p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+                aria-label="Delete"
+                title="Delete"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            </span>
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="panel border-border">
+          {isFolder && (
+            <>
+              <ContextMenuItem onClick={() => onAddChild(node)}>
+                New file
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => onAddFolderChild(node)}>
+                New folder
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
           <ContextMenuItem onClick={() => setRenaming(true)}>
             Rename
           </ContextMenuItem>
@@ -393,9 +388,7 @@ function NodeRow({
             <AlertDialogAction
               onClick={async () => {
                 try {
-                  await useFsStore
-                    .getState()
-                    .remove(node.type, node.id);
+                  await useFsStore.getState().remove(node.type, node.id);
                   setConfirmDelete(false);
                 } catch {
                   toast.error("Failed to delete");

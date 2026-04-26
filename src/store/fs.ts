@@ -30,9 +30,11 @@ interface FsState {
   saving: boolean;
   lastSavedAt: number | null;
   loading: boolean;
+  openTabs: string[];
 
   refresh: () => Promise<void>;
   selectFile: (id: string) => void;
+  closeTab: (id: string) => void;
   setContent: (content: string) => void;
   saveActive: () => Promise<void>;
 
@@ -102,6 +104,7 @@ export const useFsStore = create<FsState>((set, get) => ({
   saving: false,
   lastSavedAt: null,
   loading: false,
+  openTabs: [],
 
   refresh: async () => {
     set({ loading: true });
@@ -118,9 +121,31 @@ export const useFsStore = create<FsState>((set, get) => ({
   selectFile: (id) => {
     const file = get().files.find((f) => f.id === id);
     if (!file) return;
-    set({
+    set((s) => ({
       activeFileId: id,
       activeContent: file.content ?? "",
+      dirty: false,
+      openTabs: s.openTabs.includes(id) ? s.openTabs : [...s.openTabs, id],
+    }));
+  },
+
+  closeTab: (id) => {
+    const s = get();
+    const idx = s.openTabs.indexOf(id);
+    if (idx === -1) return;
+    const next = s.openTabs.filter((t) => t !== id);
+    let nextActive = s.activeFileId;
+    let nextContent = s.activeContent;
+    if (s.activeFileId === id) {
+      const fallback = next[idx] ?? next[idx - 1] ?? null;
+      nextActive = fallback;
+      const f = fallback ? s.files.find((x) => x.id === fallback) : null;
+      nextContent = f?.content ?? "";
+    }
+    set({
+      openTabs: next,
+      activeFileId: nextActive,
+      activeContent: nextContent,
       dirty: false,
     });
   },
@@ -164,8 +189,13 @@ export const useFsStore = create<FsState>((set, get) => ({
 
   remove: async (type, id) => {
     await api.delete(`/api/fs/${type}/${id}`);
-    if (type === "file" && get().activeFileId === id) {
-      set({ activeFileId: null, activeContent: "", dirty: false });
+    if (type === "file") {
+      set((s) => ({
+        openTabs: s.openTabs.filter((t) => t !== id),
+        ...(s.activeFileId === id
+          ? { activeFileId: null, activeContent: "", dirty: false }
+          : {}),
+      }));
     }
     await get().refresh();
   },

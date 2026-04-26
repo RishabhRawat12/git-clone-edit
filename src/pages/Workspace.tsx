@@ -1,5 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
+import {
+  ImperativePanelHandle,
+} from "react-resizable-panels";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -8,44 +11,81 @@ import {
 import { Header } from "@/components/workspace/Header";
 import { CodeEditor } from "@/components/workspace/CodeEditor";
 import { CompilationPanel } from "@/components/workspace/CompilationPanel";
-import { FileExplorerSheet } from "@/components/workspace/FileExplorerSheet";
+import { FileExplorer } from "@/components/workspace/FileExplorer";
+import { StatusBar } from "@/components/workspace/StatusBar";
+import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { useAuthStore } from "@/store/auth";
+import { useUiStore } from "@/store/ui";
 
 const Workspace = () => {
   const { isAuthenticated, hydrate } = useAuthStore();
+  const explorerCollapsed = useUiStore((s) => s.explorerCollapsed);
+  const explorerPanelRef = useRef<ImperativePanelHandle | null>(null);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
-  // After hydrate runs, useAuthStore reflects the latest token.
+  // Sync explorer panel collapse state with store
+  useEffect(() => {
+    const panel = explorerPanelRef.current;
+    if (!panel) return;
+    if (explorerCollapsed) {
+      panel.collapse();
+    } else {
+      panel.expand();
+    }
+  }, [explorerCollapsed]);
+
   const token = useAuthStore((s) => s.token);
   if (!isAuthenticated && !token) {
     return <Navigate to="/auth" replace />;
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Header />
-      <main className="flex-1 min-h-0 px-3 pb-3 pt-3">
+
+      <main className="flex-1 min-h-0 p-1.5">
         <ResizablePanelGroup
           direction="horizontal"
-          className="h-full rounded-xl"
+          className="h-full"
+          autoSaveId="compilerhub:layout-h"
         >
-          <ResizablePanel defaultSize={55} minSize={30}>
-            <div className="h-full pr-1.5">
+          <ResizablePanel
+            ref={explorerPanelRef}
+            defaultSize={18}
+            minSize={12}
+            maxSize={35}
+            collapsible
+            collapsedSize={0}
+            onCollapse={() => useUiStore.setState({ explorerCollapsed: true })}
+            onExpand={() => useUiStore.setState({ explorerCollapsed: false })}
+            className="min-w-0"
+          >
+            <div className="h-full pr-1">
+              <FileExplorer />
+            </div>
+          </ResizablePanel>
+          <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
+
+          <ResizablePanel defaultSize={52} minSize={30}>
+            <div className="h-full">
               <CodeEditor />
             </div>
           </ResizablePanel>
-          <ResizableHandle withHandle className="bg-transparent" />
-          <ResizablePanel defaultSize={45} minSize={25}>
-            <div className="h-full pl-1.5">
+
+          <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
+          <ResizablePanel defaultSize={30} minSize={20} collapsible>
+            <div className="h-full pl-1">
               <CompilationPanel />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>
-      <FileExplorerSheet />
+
+      <StatusBar />
+      <CommandPalette />
     </div>
   );
 };
