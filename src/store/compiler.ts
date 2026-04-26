@@ -89,4 +89,19 @@ export const useCompilerStore = create<CompilerState>((set, get) => ({
     if (!r) return [];
     return (r.data[phase]?.warnings ?? []).map((d) => ({ ...d, phase }));
   },
+
+  allDiagnostics: () => {
+    const r = get().response;
+    if (!r) return [];
+    const out: Array<FlatDiagnostic & { severity: "error" | "warning" }> = [];
+    for (const p of PHASES) {
+      for (const e of r.data[p]?.errors ?? []) {
+        out.push({ ...e, phase: p, severity: "error" });
+      }
+      for (const w of r.data[p]?.warnings ?? []) {
+        out.push({ ...w, phase: p, severity: "warning" });
+      }
+    }
+    return out.sort((a, b) => a.line - b.line);
+  },
 }));
