@@ -11,8 +11,15 @@
     --background: 226 40% 7%;
     --foreground: 220 20% 90%;
 
-    /* Panel cards */
-    --card: 226 35% 10%;
+    /* Solid elevation system — replaces opacity hacks
+       0 = workspace base, 1 = panel surface, 2 = active tab/modal */
+    --surface-0: 226 42% 6%;
+    --surface-1: 226 38% 10%;
+    --surface-2: 226 35% 14%;
+    --surface-3: 226 32% 18%;
+
+    /* Panel cards (alias of surface-1 for shadcn compat) */
+    --card: 226 38% 10%;
     --card-foreground: 220 20% 90%;
 
     --popover: 226 38% 9%;
@@ -31,7 +38,9 @@
     --secondary-foreground: 220 20% 90%;
 
     --muted: 226 25% 14%;
-    --muted-foreground: 220 12% 60%;
+    /* Bumped from 12% L to 65% L for WCAG AA on surface-1 */
+    --muted-foreground: 220 14% 68%;
+    --subtle-foreground: 220 12% 56%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -43,10 +52,24 @@
     --success-foreground: 0 0% 100%;
 
     --border: 226 30% 18%;
+    --border-strong: 226 28% 26%;
     --input: 226 30% 16%;
     --ring: 252 90% 68%;
 
     --radius: 1rem;
+
+    /* Terminal / syntax color tokens — replaces inline HEX */
+    --syntax-keyword: 262 83% 73%;     /* #bb9af7 */
+    --syntax-fn: 217 92% 73%;          /* #7aa2f7 */
+    --syntax-string: 95 38% 62%;       /* #9ece6a */
+    --syntax-type: 188 64% 51%;        /* #2ac3de */
+    --syntax-number: 25 100% 70%;      /* #ff9e64 */
+    --syntax-error: 350 91% 71%;       /* #f7768e */
+    --syntax-warning: 35 67% 64%;      /* #e0af68 */
+    --syntax-comment: 226 17% 44%;     /* #565f89 */
+    --syntax-base: 229 80% 87%;        /* #c0caf5 */
+    --syntax-punct: 197 100% 76%;      /* #89ddff */
+    --terminal-bg: 228 41% 7%;         /* #0a0d18 */
 
     /* Gradients & shadows */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
@@ -103,5 +126,45 @@
     @apply rounded-2xl border border-border bg-card;
     background-image: var(--gradient-panel);
     box-shadow: var(--shadow-panel);
+  }
+
+  /* Edge-fade indicators for horizontal scroll containers (e.g. tab bars).
+     Apply alongside .scroll-fade-x — uses currentColor of parent surface. */
+  .scroll-fade-x {
+    position: relative;
+  }
+  .scroll-fade-x::before,
+  .scroll-fade-x::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .scroll-fade-x::before {
+    left: 0;
+    background: linear-gradient(to right, hsl(var(--surface-1)), transparent);
+  }
+  .scroll-fade-x::after {
+    right: 0;
+    background: linear-gradient(to left, hsl(var(--surface-1)), transparent);
+  }
+}
+
+@layer utilities {
+  /* Line-jump flash highlight (Monaco line decoration) */
+  .editor-line-flash {
+    background: hsl(var(--primary) / 0.28) !important;
+    animation: editor-line-flash 1.4s ease-out;
+  }
+  @keyframes editor-line-flash {
+    0% {
+      background: hsl(var(--primary) / 0.55) !important;
+    }
+    100% {
+      background: hsl(var(--primary) / 0) !important;
+    }
   }
 }
