@@ -70,22 +70,9 @@ const Workspace = () => {
           <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
 
           <ResizablePanel defaultSize={52} minSize={30}>
-            <ResizablePanelGroup
-              direction="vertical"
-              autoSaveId="compilerhub:layout-v"
-            >
-              <ResizablePanel defaultSize={70} minSize={30}>
-                <div className="h-full pb-1">
-                  <CodeEditor />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle className="bg-transparent h-1.5 hover:bg-primary/30 transition-colors" />
-              <ResizablePanel defaultSize={30} minSize={15} collapsible>
-                <div className="h-full pt-1">
-                  <CompilationPanel />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
+            <div className="h-full">
+              <CodeEditor />
+            </div>
           </ResizablePanel>
 
           <ResizableHandle className="bg-transparent w-1.5 hover:bg-primary/30 transition-colors" />
