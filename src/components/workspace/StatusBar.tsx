@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 export function StatusBar() {
   const activeFileId = useFsStore((s) => s.activeFileId);
   const files = useFsStore((s) => s.files);
-  const dirty = useFsStore((s) => s.dirty);
   const saving = useFsStore((s) => s.saving);
   const isCompiling = useCompilerStore((s) => s.isCompiling);
   const totalErrors = useCompilerStore((s) => s.totalErrors());
@@ -23,7 +22,6 @@ export function StatusBar() {
     col: 1,
   });
 
-  // Listen for editor cursor reports (dispatched from CodeEditor in future)
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { line: number; col: number };
@@ -42,41 +40,39 @@ export function StatusBar() {
       : { label: "ready", color: "text-success" };
 
   return (
-    <footer className="h-6 flex items-center justify-between gap-3 px-2 text-[10px] font-mono bg-primary/90 text-primary-foreground border-t border-border shrink-0">
+    <footer
+      className="h-6 flex items-center justify-between gap-3 px-2 text-2xs font-mono bg-primary text-primary-foreground border-t border-border shrink-0"
+      role="status"
+      aria-label="Editor status"
+    >
       <div className="flex items-center gap-3 min-w-0">
         <span className="flex items-center gap-1">
           <Circle
-            className={cn(
-              "size-2 fill-current",
-              status.color,
-            )}
+            className={cn("size-2 fill-current", status.color)}
+            aria-hidden
           />
           {status.label}
         </span>
-        <span className="flex items-center gap-1 opacity-90">
-          <GitBranch className="size-3" /> main
+        <span className="flex items-center gap-1">
+          <GitBranch className="size-3" aria-hidden /> main
         </span>
         {response && (
-          <span className="opacity-90">
+          <span>
             {totalWarnings} warnings · {totalErrors} errors
           </span>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        {saving ? (
-          <span className="opacity-80">saving…</span>
-        ) : dirty ? (
-          <span className="opacity-90">● unsaved</span>
-        ) : null}
+        {saving && <span>saving…</span>}
         <span>
           Ln {pos.line}, Col {pos.col}
         </span>
         <span className="uppercase tracking-wider">{language}</span>
         <span>UTF-8</span>
         <span>LF</span>
-        <span className="flex items-center gap-1 opacity-90">
-          <Wifi className="size-3" /> CompilerHub
+        <span className="flex items-center gap-1">
+          <Wifi className="size-3" aria-hidden /> CompilerHub
         </span>
       </div>
     </footer>
