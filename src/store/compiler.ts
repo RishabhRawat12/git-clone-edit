@@ -15,10 +15,10 @@ interface FlatDiagnostic extends PhaseDiagnostic {
 interface CompilerState {
   isCompiling: boolean;
   response: CompileResponse | null;
-  category: CompilerCategory;
+  category: CompilerCategory | "problems";
   phase: CompilePhase;
 
-  setCategory: (c: CompilerCategory) => void;
+  setCategory: (c: CompilerCategory | "problems") => void;
   setPhase: (p: CompilePhase) => void;
   run: (code: string) => Promise<void>;
   reset: () => void;
@@ -27,6 +27,7 @@ interface CompilerState {
   totalWarnings: () => number;
   errorsByPhase: (phase: CompilePhase) => FlatDiagnostic[];
   warningsByPhase: (phase: CompilePhase) => FlatDiagnostic[];
+  allDiagnostics: () => Array<FlatDiagnostic & { severity: "error" | "warning" }>;
 }
 
 export const PHASES: CompilePhase[] = [
