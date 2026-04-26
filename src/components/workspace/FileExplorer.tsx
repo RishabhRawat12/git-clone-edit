@@ -61,9 +61,9 @@ export function FileExplorer() {
   };
 
   return (
-    <aside className="h-full flex flex-col bg-card/60 border border-border rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-3 h-9 border-b border-border bg-background/40">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+    <aside className="h-full flex flex-col bg-surface-1 border border-border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-3 h-9 border-b border-border bg-surface-1">
+        <span className="text-xs-tight font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Explorer
         </span>
         <div className="flex items-center gap-0.5">
@@ -213,7 +213,11 @@ function NodeRow({
 
   const handleClick = () => {
     if (isFolder) setOpen((o) => !o);
-    else useFsStore.getState().selectFile(node.id);
+    else useFsStore.getState().peekFile(node.id);
+  };
+  const handleDoubleClick = () => {
+    if (isFolder) return;
+    useFsStore.getState().pinFile(node.id);
   };
 
   const submitRename = async () => {
@@ -238,12 +242,13 @@ function NodeRow({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group relative flex items-center gap-1.5 pr-1.5 py-[3px] cursor-pointer hover:bg-secondary/50 transition-colors",
+              "group relative flex items-center gap-1.5 pr-1.5 py-[3px] cursor-pointer hover:bg-surface-2 transition-colors",
               isActive &&
-                "bg-primary/15 text-foreground before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-primary",
+                "bg-surface-2 text-foreground before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-primary",
             )}
             style={{ paddingLeft: depth * 10 + 6 }}
             onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
           >
             {isFolder ? (
               <ChevronRight
